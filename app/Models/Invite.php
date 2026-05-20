@@ -2,44 +2,44 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invite extends Model
 {
+    use HasFactory;
+    
     protected $fillable = [
         'email',
         'token',
-        'name',
+        'role',
         'company_id',
         'sector_id',
-        'role',
+        'status',
         'expires_at',
-        'accepted_at'
     ];
-
+    
     protected $casts = [
         'expires_at' => 'datetime',
-        'accepted_at' => 'datetime'
     ];
-
-    public function company(): BelongsTo
+    
+    public function company()
     {
         return $this->belongsTo(Company::class);
     }
-
-    public function sector(): BelongsTo
+    
+    public function sector()
     {
         return $this->belongsTo(Sector::class);
     }
-
-    public function isExpired(): bool
+    
+    public function isExpired()
     {
         return $this->expires_at && $this->expires_at->isPast();
     }
-
-    public function isAccepted(): bool
+    
+    public function isPending()
     {
-        return $this->accepted_at !== null;
+        return $this->status === 'pending';
     }
 }

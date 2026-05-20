@@ -11,14 +11,19 @@ class CompanyController extends Controller
 {
     public function index()
     {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        
         $companies = Company::orderBy('name')->paginate(15);
+        
         return view('admin.companies.index', compact('companies'));
     }
 
     public function create()
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
         return view('admin.companies.create');
@@ -27,21 +32,25 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'cnpj' => 'required|string|max:18|unique:companies',
-            'ramo' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean'
+        $request->validate([
+            'name' => 'required|string|max:255|unique:companies,name',
+            'cnpj' => 'nullable|string|max:18|unique:companies,cnpj',
+            'telefone' => 'nullable|string|max:20',
+            'endereco' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
         ]);
-
-        Company::create($validated);
-
+        
+        Company::create([
+            'name' => $request->name,
+            'cnpj' => $request->cnpj,
+            'telefone' => $request->telefone,
+            'endereco' => $request->endereco,
+            'is_active' => $request->has('is_active'),
+        ]);
+        
         return redirect()->route('admin.companies.index')
             ->with('success', 'Empresa criada com sucesso!');
     }
@@ -49,7 +58,7 @@ class CompanyController extends Controller
     public function show(Company $company)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
         return view('admin.companies.show', compact('company'));
@@ -58,7 +67,7 @@ class CompanyController extends Controller
     public function edit(Company $company)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
         return view('admin.companies.edit', compact('company'));
@@ -67,21 +76,25 @@ class CompanyController extends Controller
     public function update(Request $request, Company $company)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'cnpj' => 'required|string|max:18|unique:companies,cnpj,' . $company->id,
-            'ramo' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean'
+        $request->validate([
+            'name' => 'required|string|max:255|unique:companies,name,' . $company->id,
+            'cnpj' => 'nullable|string|max:18|unique:companies,cnpj,' . $company->id,
+            'telefone' => 'nullable|string|max:20',
+            'endereco' => 'nullable|string',
+            'is_active' => 'sometimes|boolean',
         ]);
-
-        $company->update($validated);
-
+        
+        $company->update([
+            'name' => $request->name,
+            'cnpj' => $request->cnpj,
+            'telefone' => $request->telefone,
+            'endereco' => $request->endereco,
+            'is_active' => $request->has('is_active'),
+        ]);
+        
         return redirect()->route('admin.companies.index')
             ->with('success', 'Empresa atualizada com sucesso!');
     }
@@ -89,16 +102,30 @@ class CompanyController extends Controller
     public function destroy(Company $company)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado. Apenas administradores podem acessar esta área.');
+            abort(403);
         }
         
         if ($company->users()->count() > 0) {
-            return back()->with('error', 'Não é possível excluir uma empresa que possui usuários vinculados.');
+            return redirect()->route('admin.companies.index')
+                ->with('error', 'Não é possível excluir uma empresa que possui usuários vinculados.');
         }
         
         $company->delete();
         
         return redirect()->route('admin.companies.index')
             ->with('success', 'Empresa excluída com sucesso!');
+    }
+    
+    public function toggleActive(Company $company)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        
+        $company->is_active = !$company->is_active;
+        $company->save();
+        
+        return redirect()->route('admin.companies.index')
+            ->with('success', 'Status da empresa alterado com sucesso!');
     }
 }

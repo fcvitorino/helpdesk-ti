@@ -8,6 +8,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
+                
+                <!-- SÓ MOSTRA O MENU SE O USUÁRIO ESTIVER LOGADO -->
+                @auth
+                
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('dashboard') }}">
                         <i class="bi bi-graph-up"></i> Dashboard
@@ -25,7 +29,7 @@
                 </li>
                 
                 <!-- Configurações - Dropdown (apenas para Admin) -->
-                @if(auth()->user()->isAdmin())
+                @if(auth()->check() && auth()->user()->isAdmin())
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Configurações
@@ -55,8 +59,8 @@
                 </li>
                 @endif
                 
-                <!-- Seletor de Empresa (apenas para Admin) -->
-                @if(auth()->user()->isAdmin())
+                <!-- Seletor de Empresa (apenas para Admin logado) -->
+                @if(auth()->check() && auth()->user()->isAdmin())
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-building"></i> 
@@ -84,7 +88,7 @@
                 </li>
                 @endif
                 
-                <!-- Menu do Usuário -->
+                <!-- Menu do Usuário (só se estiver logado) -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i> {{ auth()->user()->name }}
@@ -103,6 +107,18 @@
                         </li>
                     </ul>
                 </li>
+                
+                @endauth
+                
+                <!-- SÓ MOSTRA O BOTÃO DE LOGIN SE NÃO ESTIVER LOGADO -->
+                @guest
+                <li class="nav-item">
+                    <a class="nav-link btn btn-outline-light px-3" href="{{ route('login') }}">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                </li>
+                @endguest
+                
             </ul>
         </div>
     </div>

@@ -3,58 +3,26 @@
 @section('content')
 <div class="card">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-        <h4 class="mb-0"><i class="bi bi-envelope"></i> Convites Enviados</h4>
+        <h4 class="mb-0">Convites</h4>
         <a href="{{ route('admin.invites.create') }}" class="btn btn-light">
-            <i class="bi bi-plus-circle"></i> Novo Convite
+            <i class="bi bi-envelope-plus"></i> Novo Convite
         </a>
     </div>
     <div class="card-body">
+        
         @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
-        @if(session('warning'))
-            <div class="alert alert-warning">{{ session('warning') }}</div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
-
-        <!-- Formulário de Filtro -->
-        <form method="GET" action="{{ route('admin.invites.index') }}" class="mb-4">
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <label class="form-label">Pesquisar</label>
-                    <input type="text" name="search" class="form-control" placeholder="Email, nome ou empresa..." value="{{ request('search') }}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pendentes</option>
-                        <option value="accepted" {{ request('status') == 'accepted' ? 'selected' : '' }}>Aceitos</option>
-                        <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expirados</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="bi bi-search"></i> Filtrar
-                    </button>
-                    <a href="{{ route('admin.invites.index') }}" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Limpar
-                    </a>
-                </div>
-            </div>
-        </form>
-
+        
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Email</th>
-                        <th>Nome</th>
+                        <th>ID</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
                         <th>Empresa</th>
                         <th>Setor</th>
-                        <th>Perfil</th>
                         <th>Status</th>
                         <th>Expira em</th>
                         <th>Ações</th>
@@ -63,10 +31,8 @@
                 <tbody>
                     @forelse($invites as $invite)
                     <tr>
+                        <td>{{ $invite->id }}</td>
                         <td>{{ $invite->email }}</td>
-                        <td>{{ $invite->name }}</td>
-                        <td>{{ $invite->company->name ?? '-' }}</td>
-                        <td>{{ $invite->sector->name ?? '-' }}</td>
                         <td>
                             @if($invite->role == 'admin')
                                 <span class="badge bg-danger">Admin</span>
@@ -76,38 +42,39 @@
                                 <span class="badge bg-secondary">Usuário</span>
                             @endif
                         </td>
+                        <td>{{ $invite->company->name ?? '-' }}</td>
+                        <td>{{ $invite->sector->name ?? '-' }}</td>
                         <td>
-                            @if($invite->accepted_at)
+                            @if($invite->status == 'pending')
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            @elseif($invite->status == 'accepted')
                                 <span class="badge bg-success">Aceito</span>
-                            @elseif($invite->isExpired())
+                            @else
                                 <span class="badge bg-danger">Expirado</span>
-                            @else
-                                <span class="badge bg-warning">Pendente</span>
                             @endif
                         </td>
+                        <td>{{ $invite->expires_at ? $invite->expires_at->format('d/m/Y') : '-' }}</td>
                         <td>
-                            @if(!$invite->accepted_at && !$invite->isExpired())
-                                {{ $invite->expires_at->format('d/m/Y') }}
-                            @else
-                                -
+                            @if($invite->status == 'pending')
+                                <form action="{{ route('admin.invites.resend', $invite) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-primary">Reenviar</button>
+                                </form>
+                                <form action="{{ route('admin.invites.cancel', $invite) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="btn btn-sm btn-danger">Cancelar</button>
+                                </form>
                             @endif
-                        </td>
-                        <td>
-                            @if(!$invite->accepted_at)
                             <form action="{{ route('admin.invites.destroy', $invite) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Remover este convite?')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <button type="submit" class="btn btn-sm btn-secondary">Excluir</button>
                             </form>
-                            @else
-                                <span class="text-muted">Finalizado</span>
-                            @endif
                         </td>
                     </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center">Nenhum convite encontrado</td></tr>
+                        <tr><td colspan="8" class="text-center">Nenhum convite encontrado</td><tr>
                     @endforelse
                 </tbody>
             </table>

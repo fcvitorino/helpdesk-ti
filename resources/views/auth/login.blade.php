@@ -1,44 +1,115 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login - HelpDesk</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login - HelpDesk TI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .alert {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-4">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white text-center">
-                        <h4>HelpDesk TI</h4>
-                    </div>
-                    <div class="card-body">
-                        <?php if(isset($errors) && $errors->any()): ?>
-                            <div class="alert alert-danger">
-                                <?php foreach($errors->all() as $error): ?>
-                                    <?php echo $error; ?><br>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <form method="POST" action="<?php echo route('login'); ?>">
-                            <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">E-mail</label>
-                                <input type="email" class="form-control" id="email" name="email" value="<?php echo old('email'); ?>" required autofocus>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Senha</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Entrar</button>
-                        </form>
-                    </div>
-                </div>
+<body>
+    <div class="login-box">
+        <h1>HelpDesk TI</h1>
+        
+        @if($errors->any())
+            <div class="alert">
+                @foreach($errors->all() as $error)
+                    {{ $error }}<br>
+                @endforeach
             </div>
+        @endif
+        
+        <form method="POST" action="{{ url('/login') }}">
+            @csrf
+            
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="password" required>
+            </div>
+            
+            <button type="submit">Entrar</button>
+        </form>
+        
+        <div class="info">
+            Sistema de Chamados Interno
         </div>
     </div>
 </body>

@@ -3,58 +3,69 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
-use App\Models\Attachment;
 use App\Models\Sector;
+use App\Models\Reply;
+use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Listar chamados com base no perfil do usuário
+     */
+    public function index()
     {
         $user = Auth::user();
+        $companyId = session('selected_company_id', $user->company_id);
         
-        if ($user->isAdmin() && session()->has('selected_company_id')) {
-            $companyId = session('selected_company_id');
+        // 🔒 REGRA DE VISIBILIDADE:
+        // - Admin: vê todos os chamados da empresa selecionada
+        // - Técnico: vê todos os chamados da empresa selecionada
+        // - Usuário comum: vê APENAS os chamados que ele mesmo abriu
+        
+        $query = Ticket::with(['user', 'sector']);
+        
+        if ($user->isAdmin() || $user->isTechnician()) {
+            // Admin ou Técnico: vê todos os chamados da empresa selecionada
+            $query->where('company_id', $companyId);
         } else {
-            $companyId = $user->company_id ?? 1;
-        }
-        
-        $query = Ticket::where('company_id', $companyId)->with(['user', 'sector']);
-        
-        // Se for usuário comum, vê apenas seus chamados
-        if (!$user->isAdmin() && !$user->isTechnician()) {
+            // Usuário comum: vê APENAS seus próprios chamados
             $query->where('user_id', $user->id);
         }
         
-        // Filtro por número do chamado ou título (busca)
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('ticket_number', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%");
+        // Aplicar filtros (se houver)
+        if (request('search')) {
+            $query->where(function($q) {
+                $q->where('ticket_number', 'like', '%' . request('search') . '%')
+                  ->orWhere('title', 'like', '%' . request('search') . '%');
             });
         }
         
-        // Aplicar filtro por status
-        if ($request->has('status') && $request->status != '') {
-            $query->where('status', $request->status);
+        if (request('status')) {
+            $query->where('status', request('status'));
         }
         
-        // Aplicar filtro por prioridade
-        if ($request->has('priority') && $request->priority != '') {
-            $query->where('priority', $request->priority);
+        if (request('priority')) {
+            $query->where('priority', request('priority'));
         }
         
-        // Aplicar filtro por setor
-        if ($request->has('sector_id') && $request->sector_id != '') {
-            $query->where('sector_id', $request->sector_id);
+        if (request('sector_id')) {
+            $query->where('sector_id', request('sector_id'));
         }
         
-        $tickets = $query->latest()->paginate(15);
-        $tickets->appends($request->all());
+        $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
         
-        $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
+        // Buscar setores para o filtro (apenas para admin/técnico)
+        $sectors = collect();
+        if ($user->isAdmin() || $user->isTechnician()) {
+            $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
+        } else {
+            // Usuário comum: só vê setores relacionados aos seus chamados
+            $sectorIds = Ticket::where('user_id', $user->id)->distinct()->pluck('sector_id');
+            $sectors = Sector::whereIn('id', $sectorIds)->orderBy('name')->get();
+        }
         
         return view('tickets.index', compact('tickets', 'sectors'));
     }
@@ -64,121 +75,182 @@ class TicketController extends Controller
         return view('tickets.create');
     }
 
+    private function generateTicketNumber()
+    {
+        $date = date('Ymd');
+        $lastTicket = Ticket::where('ticket_number', 'like', $date . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($lastTicket) {
+            $lastNumber = intval(substr($lastTicket->ticket_number, -4));
+            $newNumber = $lastNumber + 1;
+            $sequential = str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        } else {
+            $sequential = '0001';
+        }
+
+        return $date . $sequential;
+    }
+
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'title' => 'required|string|max:255',
-            'location' => 'required|string',
-            'priority' => 'required|in:baixa,normal,urgente',
             'description' => 'required|string',
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,gif,bmp,webp,pdf,doc,docx,xls,xlsx,zip',
+            'location' => 'required|string',
+            'priority' => 'required|in:baixa,normal,alta,urgente',
         ]);
 
         $ticket = Ticket::create([
-            'user_id' => Auth::id(),
-            'sector_id' => Auth::user()->sector_id,
-            'company_id' => Auth::user()->company_id ?? 1,
-            'title' => $validated['title'],
-            'location' => $validated['location'],
-            'priority' => $validated['priority'],
-            'description' => $validated['description'],
+            'ticket_number' => $this->generateTicketNumber(),
+            'title' => $request->title,
+            'description' => $request->description,
+            'location' => $request->location,
+            'priority' => $request->priority,
             'status' => 'aberto',
+            'company_id' => session('selected_company_id', auth()->user()->company_id),
+            'user_id' => auth()->id(),
+            'sector_id' => auth()->user()->sector_id,
         ]);
 
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('attachments', 'public');
-                $savedPath = str_replace('attachments/', '', $path);
-                
-                Attachment::create([
-                    'ticket_id' => $ticket->id,
-                    'filename' => $file->hashName(),
-                    'original_name' => $file->getClientOriginalName(),
-                    'path' => $savedPath,
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-            }
-        }
-
-        return redirect()->route('tickets.index')
-            ->with('success', 'Chamado #' . $ticket->id . ' aberto com sucesso! Número: ' . $ticket->ticket_number);
+        return redirect()->route('tickets.show', $ticket)
+            ->with('success', "Chamado {$ticket->ticket_number} aberto com sucesso!");
     }
 
     public function show(Ticket $ticket)
     {
         $this->authorizeAccess($ticket);
-        return view('tickets.show', compact('ticket'));
+        $replies = $ticket->replies()->with('user')->orderBy('created_at', 'asc')->get();
+        return view('tickets.show', compact('ticket', 'replies'));
+    }
+
+    public function edit(Ticket $ticket)
+    {
+        $this->authorizeAccess($ticket);
+        return view('tickets.edit', compact('ticket'));
     }
 
     public function update(Request $request, Ticket $ticket)
     {
         $this->authorizeAccess($ticket);
-        
-        $validated = $request->validate([
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'location' => 'required|string',
+            'priority' => 'required|in:baixa,normal,alta,urgente',
+        ]);
+
+        $ticket->update([
+            'title' => $request->title,
+            'description' => $request->description,
+            'location' => $request->location,
+            'priority' => $request->priority,
+        ]);
+
+        return redirect()->route('tickets.show', $ticket)
+            ->with('success', 'Chamado atualizado com sucesso!');
+    }
+
+    public function destroy(Ticket $ticket)
+    {
+        $this->authorizeAccess($ticket);
+        $ticket->delete();
+        return redirect()->route('tickets.index')->with('success', 'Chamado excluído com sucesso!');
+    }
+
+    public function updateStatus(Request $request, Ticket $ticket)
+    {
+        $this->authorizeAccess($ticket);
+
+        $request->validate([
             'status' => 'required|in:aberto,em_andamento,resolvido,fechado',
         ]);
 
-        if ($validated['status'] == 'resolvido' || $validated['status'] == 'fechado') {
+        $ticket->status = $request->status;
+        if ($request->status == 'resolvido') {
             $ticket->resolved_at = now();
         }
-
-        $ticket->update($validated);
+        $ticket->save();
 
         return back()->with('success', 'Status atualizado com sucesso!');
     }
 
-    public function reply(Request $request, Ticket $ticket)
+    public function addComment(Request $request, Ticket $ticket)
     {
+        $this->authorizeAccess($ticket);
+        
+        // Bloqueia comentários em tickets resolvidos ou fechados
+        if ($ticket->status == 'resolvido' || $ticket->status == 'fechado') {
+            return back()->with('error', '❌ Este chamado está ' . $ticket->status . '. Não é possível adicionar novos comentários.');
+        }
+        
         $request->validate([
             'message' => 'required|string',
-            'attachments.*' => 'nullable|file|max:5120|mimes:jpg,jpeg,png,gif,bmp,webp,pdf,doc,docx,xls,xlsx,zip',
+            'attachment' => 'nullable|file|max:5120',
         ]);
-
-        $reply = $ticket->replies()->create([
+        
+        $reply = Reply::create([
+            'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'message' => $request->message,
-            'is_technician' => auth()->user()->isTechnician() || auth()->user()->isAdmin(),
+            'is_support' => in_array(auth()->user()->role, ['admin', 'technician']),
         ]);
-
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('attachments', 'public');
-                $savedPath = str_replace('attachments/', '', $path);
-                
-                Attachment::create([
-                    'ticket_id' => $ticket->id,
-                    'reply_id' => $reply->id,
-                    'filename' => $file->hashName(),
-                    'original_name' => $file->getClientOriginalName(),
-                    'path' => $savedPath,
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                ]);
-            }
+        
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('attachments/replies', $filename, 'public');
+            
+            Attachment::create([
+                'ticket_id' => $ticket->id,
+                'reply_id' => $reply->id,
+                'user_id' => auth()->id(),
+                'filename' => $filename,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ]);
         }
-
-        if ($ticket->status == 'aberto' && auth()->user()->isTechnician()) {
-            $ticket->update(['status' => 'em_andamento']);
+        
+        if ($ticket->status == 'aberto') {
+            $ticket->status = 'em_andamento';
+            $ticket->save();
         }
-
-        return back()->with('success', 'Mensagem enviada com sucesso!');
+        
+        return back()->with('success', 'Comentário adicionado com sucesso!');
     }
 
+    /**
+     * Verificar permissão de acesso ao chamado
+     * - Admin: acesso total (qualquer chamado)
+     * - Técnico: acesso a chamados da sua empresa
+     * - Usuário comum: acesso APENAS aos seus próprios chamados
+     */
     private function authorizeAccess(Ticket $ticket)
     {
-        $user = Auth::user();
-        
+        $user = auth()->user();
+
+        // Admin tem acesso total
         if ($user->isAdmin()) {
-            return;
+            return true;
         }
         
+        // Técnico vê chamados da sua empresa
         if ($user->isTechnician()) {
-            return;
+            if ($ticket->company_id == session('selected_company_id', $user->company_id)) {
+                return true;
+            }
+            abort(403, 'Acesso negado. Você não tem permissão para visualizar este chamado.');
         }
         
-        if ($ticket->user_id !== $user->id) {
-            abort(403, 'Você não tem permissão para acessar este chamado.');
+        // Usuário comum: só vê seus próprios chamados
+        if ($ticket->user_id != $user->id) {
+            abort(403, 'Acesso negado. Você só pode visualizar seus próprios chamados.');
         }
+        
+        return true;
     }
 }

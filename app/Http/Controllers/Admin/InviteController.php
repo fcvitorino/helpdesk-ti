@@ -10,44 +10,21 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Mail\InviteMail;
 
 class InviteController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         if (!Auth::user()->isAdmin()) {
             abort(403);
         }
         
-        $query = Invite::with(['company', 'sector']);
-        
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('email', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhereHas('company', function($cq) use ($search) {
-                      $cq->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-        
-        if ($request->has('status') && $request->status != '') {
-            if ($request->status == 'pending') {
-                $query->whereNull('accepted_at')->where('expires_at', '>', now());
-            } elseif ($request->status == 'accepted') {
-                $query->whereNotNull('accepted_at');
-            } elseif ($request->status == 'expired') {
-                $query->whereNull('accepted_at')->where('expires_at', '<', now());
-            }
-        }
-        
-        $invites = $query->latest()->paginate(20);
-        $invites->appends($request->all());
+        $invites = Invite::with(['company', 'sector'])->orderBy('created_at', 'desc')->paginate(15);
         
         return view('admin.invites.index', compact('invites'));
     }
-
+    
     public function create()
     {
         if (!Auth::user()->isAdmin()) {
@@ -56,9 +33,10 @@ class InviteController extends Controller
         
         $companies = Company::where('is_active', true)->orderBy('name')->get();
         $sectors = Sector::orderBy('name')->get();
+        
         return view('admin.invites.create', compact('companies', 'sectors'));
     }
-
+    
     public function store(Request $request)
     {
         if (!Auth::user()->isAdmin()) {
@@ -66,54 +44,33 @@ class InviteController extends Controller
         }
         
         $request->validate([
-            'name' => 'required|string|max:255',
-            'emails' => 'required|email',
+            'email' => 'required|email|unique:invites,email',
+            'role' => 'required|in:admin,technician,user',
             'company_id' => 'required|exists:companies,id',
             'sector_id' => 'required|exists:sectors,id',
-            'role' => 'required|in:admin,technician,user',
         ]);
         
-        $email = trim($request->emails);
-        
-        // Verificar se já existe usuário com este email
-        if (\App\Models\User::where('email', $email)->exists()) {
-            return redirect()->route('admin.invites.create')->with('error', 'Este email já está cadastrado.');
-        }
-        
-        // Verificar se já existe convite pendente
-        $pending = Invite::where('email', $email)
-            ->whereNull('accepted_at')
-            ->where('expires_at', '>', now())
-            ->exists();
-            
-        if ($pending) {
-            return redirect()->route('admin.invites.create')->with('error', 'Este email já possui um convite pendente.');
-        }
-        
-        $token = Str::random(64);
-        
         $invite = Invite::create([
-            'email' => $email,
-            'token' => $token,
-            'name' => $request->name,
+            'email' => $request->email,
+            'token' => Str::random(64),
+            'role' => $request->role,
             'company_id' => $request->company_id,
             'sector_id' => $request->sector_id,
-            'role' => $request->role,
+            'status' => 'pending',
             'expires_at' => now()->addDays(7),
         ]);
         
+        // Enviar email via Mailtrap
         try {
-            Mail::send('emails.invite', ['invite' => $invite], function ($message) use ($email) {
-                $message->to($email)
-                        ->subject('Convite para o HelpDesk TI');
-            });
-            
-            return redirect()->route('admin.invites.index')->with('success', "Convite enviado com sucesso para {$email}!");
+            Mail::to($request->email)->send(new InviteMail($invite));
+            return redirect()->route('admin.invites.index')
+                ->with('success', '✅ Convite enviado com sucesso para ' . $request->email);
         } catch (\Exception $e) {
-            return redirect()->route('admin.invites.create')->with('error', 'Erro ao enviar email: ' . $e->getMessage());
+            return redirect()->route('admin.invites.index')
+                ->with('warning', '⚠️ Convite criado, mas o email não foi enviado. Erro: ' . $e->getMessage());
         }
     }
-
+    
     public function destroy(Invite $invite)
     {
         if (!Auth::user()->isAdmin()) {
@@ -122,44 +79,41 @@ class InviteController extends Controller
         
         $invite->delete();
         
-        return redirect()->route('admin.invites.index')->with('success', 'Convite removido com sucesso!');
+        return redirect()->route('admin.invites.index')
+            ->with('success', 'Convite removido com sucesso!');
     }
-
-    public function accept($token)
+    
+    public function resend(Invite $invite)
     {
-        $invite = Invite::where('token', $token)
-            ->whereNull('accepted_at')
-            ->where('expires_at', '>', now())
-            ->firstOrFail();
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
         
-        return view('admin.invites.accept', compact('invite'));
-    }
-
-    public function storePassword(Request $request, $token)
-    {
-        $invite = Invite::where('token', $token)
-            ->whereNull('accepted_at')
-            ->where('expires_at', '>', now())
-            ->firstOrFail();
-        
-        $request->validate([
-            'password' => 'required|min:6|confirmed',
+        $invite->update([
+            'token' => Str::random(64),
+            'expires_at' => now()->addDays(7),
+            'status' => 'pending',
         ]);
         
-        $user = \App\Models\User::create([
-            'name' => $invite->name,
-            'email' => $invite->email,
-            'password' => bcrypt($request->password),
-            'role' => $invite->role,
-            'company_id' => $invite->company_id,
-            'sector_id' => $invite->sector_id,
-            'email_verified_at' => now(),
-        ]);
+        try {
+            Mail::to($invite->email)->send(new InviteMail($invite));
+            return redirect()->route('admin.invites.index')
+                ->with('success', 'Convite reenviado com sucesso para ' . $invite->email);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.invites.index')
+                ->with('warning', 'Convite reenviado, mas o email falhou: ' . $e->getMessage());
+        }
+    }
+    
+    public function cancel(Invite $invite)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
         
-        $invite->update(['accepted_at' => now()]);
+        $invite->update(['status' => 'expired']);
         
-        auth()->login($user);
-        
-        return redirect()->route('dashboard')->with('success', 'Bem-vindo ao HelpDesk! Sua conta foi ativada.');
+        return redirect()->route('admin.invites.index')
+            ->with('success', 'Convite cancelado com sucesso!');
     }
 }

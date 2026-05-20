@@ -13,26 +13,18 @@ class SectorController extends Controller
     public function index()
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+            abort(403);
         }
         
-        // Se for admin e tiver uma empresa selecionada, usa ela. Senão, usa a empresa do usuário
-        if (session()->has('selected_company_id')) {
-            $companyId = session('selected_company_id');
-        } else {
-            $companyId = Auth::user()->company_id;
-        }
+        $sectors = Sector::with('company')->orderBy('name')->paginate(15);
         
-        $sectors = Sector::where('company_id', $companyId)->orderBy('name')->paginate(15);
-        $companies = Company::where('is_active', true)->orderBy('name')->get();
-        
-        return view('admin.sectors.index', compact('sectors', 'companies', 'companyId'));
+        return view('admin.sectors.index', compact('sectors'));
     }
 
     public function create()
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+            abort(403);
         }
         
         $companies = Company::where('is_active', true)->orderBy('name')->get();
@@ -43,35 +35,24 @@ class SectorController extends Controller
     public function store(Request $request)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+            abort(403);
         }
         
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'icon' => 'nullable|string|max:50',
-            'company_id' => 'required|exists:companies,id'
+            'company_id' => 'required|exists:companies,id',
         ]);
-
-        Sector::create($validated);
-
+        
+        Sector::create($request->all());
+        
         return redirect()->route('admin.sectors.index')
             ->with('success', 'Setor criado com sucesso!');
-    }
-
-    public function show(Sector $sector)
-    {
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
-        }
-        
-        return view('admin.sectors.show', compact('sector'));
     }
 
     public function edit(Sector $sector)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+            abort(403);
         }
         
         $companies = Company::where('is_active', true)->orderBy('name')->get();
@@ -82,18 +63,16 @@ class SectorController extends Controller
     public function update(Request $request, Sector $sector)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+            abort(403);
         }
         
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'icon' => 'nullable|string|max:50',
-            'company_id' => 'required|exists:companies,id'
+            'company_id' => 'required|exists:companies,id',
         ]);
-
-        $sector->update($validated);
-
+        
+        $sector->update($request->all());
+        
         return redirect()->route('admin.sectors.index')
             ->with('success', 'Setor atualizado com sucesso!');
     }
@@ -101,22 +80,24 @@ class SectorController extends Controller
     public function destroy(Sector $sector)
     {
         if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
-        }
-        
-        // Verificar se existem chamados vinculados a este setor
-        if ($sector->tickets()->count() > 0) {
-            return back()->with('error', 'Não é possível excluir um setor que possui chamados vinculados.');
-        }
-        
-        // Verificar se existem usuários vinculados a este setor
-        if ($sector->users()->count() > 0) {
-            return back()->with('error', 'Não é possível excluir um setor que possui usuários vinculados.');
+            abort(403);
         }
         
         $sector->delete();
         
         return redirect()->route('admin.sectors.index')
             ->with('success', 'Setor excluído com sucesso!');
+    }
+    
+    /**
+     * Buscar setores por empresa (para AJAX)
+     */
+    public function getByCompany($companyId)
+    {
+        $sectors = Sector::where('company_id', $companyId)
+                         ->orderBy('name')
+                         ->get(['id', 'name']);
+        
+        return response()->json($sectors);
     }
 }

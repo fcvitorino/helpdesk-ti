@@ -2,34 +2,32 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Reply extends Model
 {
+    use HasFactory;
+    
     protected $fillable = [
         'ticket_id',
         'user_id',
         'message',
-        'is_technician'
+        'is_support',
     ];
-
-    protected $casts = [
-        'is_technician' => 'boolean'
-    ];
-
-    public function ticket(): BelongsTo
+    
+    public function ticket()
     {
         return $this->belongsTo(Ticket::class);
     }
-
-    public function user(): BelongsTo
+    
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
-
-    public function attachments(): HasMany
+    
+    // ⬇️ ESSE MÉTODO É FUNDAMENTAL PARA OS ANEXOS ⬇️
+    public function attachments()
     {
         return $this->hasMany(Attachment::class, 'reply_id');
     }

@@ -2,31 +2,36 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
+    use HasFactory;
+    
     protected $fillable = [
         'name',
         'cnpj',
-        'ramo',
-        'phone',
-        'email',
-        'address',
-        'is_active'
+        'telefone',
+        'endereco',
+        'is_active',
     ];
-
+    
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
-
-    public function users(): HasMany
+    
+    public function users()
     {
         return $this->hasMany(User::class);
     }
-
-    public function tickets(): HasMany
+    
+    public function sectors()
+    {
+        return $this->hasMany(Sector::class);
+    }
+    
+    public function tickets()
     {
         return $this->hasMany(Ticket::class);
     }

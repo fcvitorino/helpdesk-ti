@@ -72,31 +72,31 @@
             <p>Um administrador convidou você para acessar o sistema de chamados <strong>HelpDesk TI</strong>.</p>
             
             <div class="info">
-                <p><strong>📧 Seu email:</strong> {{ $invite->email }}</p>
+                <p><strong>📧 Seu email:</strong> <?php echo e($invite->email); ?></p>
                 <p><strong>👔 Perfil:</strong> 
-                    @if($invite->role == 'admin')
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($invite->role == 'admin'): ?>
                         Administrador
-                    @elseif($invite->role == 'technician')
+                    <?php elseif($invite->role == 'technician'): ?>
                         Técnico
-                    @else
+                    <?php else: ?>
                         Usuário
-                    @endif
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </p>
-                <p><strong>🏢 Empresa:</strong> {{ $invite->company->name ?? 'Não definida' }}</p>
-                <p><strong>📅 Expira em:</strong> {{ $invite->expires_at->format('d/m/Y') }}</p>
+                <p><strong>🏢 Empresa:</strong> <?php echo e($invite->company->name ?? 'Não definida'); ?></p>
+                <p><strong>📅 Expira em:</strong> <?php echo e($invite->expires_at->format('d/m/Y')); ?></p>
             </div>
             
             <p>Para aceitar o convite e criar sua senha, clique no botão abaixo:</p>
             
             <p style="text-align: center;">
-                <a href="{{ url('register/' . $invite->token) }}" class="button" style="background: #28a745; color: white; display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 5px;">
+                <a href="<?php echo e(url('register/' . $invite->token)); ?>" class="button" style="background: #28a745; color: white; display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 5px;">
                     ✅ Aceitar Convite
                 </a>
             </p>
             
             <p style="text-align: center; font-size: 12px; color: #666;">
                 Ou copie e cole o link abaixo no seu navegador:<br>
-                <small>{{ url('register/' . $invite->token) }}</small>
+                <small><?php echo e(url('register/' . $invite->token)); ?></small>
             </p>
             
             <hr>
@@ -106,8 +106,8 @@
         
         <div class="footer">
             <p>Este é um email automático, por favor não responda.</p>
-            <p>HelpDesk TI - Sistema de Chamados &copy; {{ date('Y') }}</p>
+            <p>HelpDesk TI - Sistema de Chamados &copy; <?php echo e(date('Y')); ?></p>
         </div>
     </div>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/emails/invite.blade.php ENDPATH**/ ?>

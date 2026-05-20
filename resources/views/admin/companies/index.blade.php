@@ -34,7 +34,7 @@
                         <td>{{ $company->id }}</td>
                         <td>{{ $company->name }}</td>
                         <td>{{ $company->cnpj }}</td>
-                        <td>{{ $company->phone ?? '-' }}</td>
+                        <td>{{ $company->telefone ?? '-' }}</td>
                         <td>
                             @if($company->is_active)
                                 <span class="badge bg-success">Ativo</span>

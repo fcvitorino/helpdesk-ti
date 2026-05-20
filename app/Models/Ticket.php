@@ -2,87 +2,81 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
 {
+    use HasFactory, SoftDeletes;
+    
     protected $fillable = [
-        'user_id',
-        'company_id',
-        'assigned_to',
-        'sector_id',
+        'ticket_number',
         'title',
         'description',
         'location',
         'priority',
         'status',
-        'resolved_at',
-        'ticket_number'
+        'company_id',
+        'user_id',
+        'sector_id',
+        'technician_id',
+        'resolved_at'
     ];
-
+    
     protected $casts = [
-        'resolved_at' => 'datetime'
+        'resolved_at' => 'datetime',
     ];
-
-    // Auto gerar número do chamado
-    protected static function boot()
-    {
-        parent::boot();
-        
-        static::creating(function ($ticket) {
-            $ticket->ticket_number = self::generateTicketNumber();
-        });
-    }
-
-    public static function generateTicketNumber()
-    {
-        $year = date('Y');
-        $month = date('m');
-        
-        $lastTicket = self::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('id', 'desc')
-            ->first();
-        
-        if ($lastTicket && $lastTicket->ticket_number) {
-            $lastNumber = (int) $lastTicket->ticket_number;
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
-        
-        return "{$year}{$month}{$newNumber}";
-    }
-
-    public function user(): BelongsTo
+    
+    // Relacionamentos
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-
-    public function company(): BelongsTo
+    
+    public function technician()
+    {
+        return $this->belongsTo(User::class, 'technician_id');
+    }
+    
+    public function company()
     {
         return $this->belongsTo(Company::class);
     }
-
-    public function technician(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
-
-    public function sector(): BelongsTo
+    
+    public function sector()
     {
         return $this->belongsTo(Sector::class);
     }
-
-    public function replies(): HasMany
+    
+    public function replies()
     {
         return $this->hasMany(Reply::class);
     }
-
-    public function attachments(): HasMany
+    
+    public function attachments()
     {
         return $this->hasMany(Attachment::class);
+    }
+    
+    // Scopes para filtros
+    public function scopeOpen($query)
+    {
+        return $query->where('status', 'aberto');
+    }
+    
+    public function scopeInProgress($query)
+    {
+        return $query->where('status', 'em_andamento');
+    }
+    
+    public function scopeResolved($query)
+    {
+        return $query->where('status', 'resolvido');
+    }
+    
+    public function scopeClosed($query)
+    {
+        return $query->where('status', 'fechado');
     }
 }

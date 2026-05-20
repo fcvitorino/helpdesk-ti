@@ -8,6 +8,10 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
+                
+                <!-- SÓ MOSTRA O MENU SE O USUÁRIO ESTIVER LOGADO -->
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
+                
                 <li class="nav-item">
                     <a class="nav-link" href="<?php echo e(route('dashboard')); ?>">
                         <i class="bi bi-graph-up"></i> Dashboard
@@ -25,7 +29,7 @@
                 </li>
                 
                 <!-- Configurações - Dropdown (apenas para Admin) -->
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isAdmin()): ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->check() && auth()->user()->isAdmin()): ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Configurações
@@ -55,8 +59,8 @@
                 </li>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- Seletor de Empresa (apenas para Admin) -->
-                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isAdmin()): ?>
+                <!-- Seletor de Empresa (apenas para Admin logado) -->
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->check() && auth()->user()->isAdmin()): ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-building"></i> 
@@ -86,7 +90,7 @@
                 </li>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- Menu do Usuário -->
+                <!-- Menu do Usuário (só se estiver logado) -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i> <?php echo e(auth()->user()->name); ?>
@@ -106,6 +110,18 @@
                         </li>
                     </ul>
                 </li>
+                
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                
+                <!-- SÓ MOSTRA O BOTÃO DE LOGIN SE NÃO ESTIVER LOGADO -->
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->guest()): ?>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-outline-light px-3" href="<?php echo e(route('login')); ?>">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                </li>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                
             </ul>
         </div>
     </div>
