@@ -15,60 +15,54 @@ class TicketController extends Controller
     /**
      * Listar chamados com base no perfil do usuário
      */
-    public function index()
-    {
-        $user = Auth::user();
-        $companyId = session('selected_company_id', $user->company_id);
-        
-        // 🔒 REGRA DE VISIBILIDADE:
-        // - Admin: vê todos os chamados da empresa selecionada
-        // - Técnico: vê todos os chamados da empresa selecionada
-        // - Usuário comum: vê APENAS os chamados que ele mesmo abriu
-        
-        $query = Ticket::with(['user', 'sector']);
-        
-        if ($user->isAdmin() || $user->isTechnician()) {
-            // Admin ou Técnico: vê todos os chamados da empresa selecionada
-            $query->where('company_id', $companyId);
-        } else {
-            // Usuário comum: vê APENAS seus próprios chamados
-            $query->where('user_id', $user->id);
-        }
-        
-        // Aplicar filtros (se houver)
-        if (request('search')) {
-            $query->where(function($q) {
-                $q->where('ticket_number', 'like', '%' . request('search') . '%')
-                  ->orWhere('title', 'like', '%' . request('search') . '%');
-            });
-        }
-        
-        if (request('status')) {
-            $query->where('status', request('status'));
-        }
-        
-        if (request('priority')) {
-            $query->where('priority', request('priority'));
-        }
-        
-        if (request('sector_id')) {
-            $query->where('sector_id', request('sector_id'));
-        }
-        
-        $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        // Buscar setores para o filtro (apenas para admin/técnico)
-        $sectors = collect();
-        if ($user->isAdmin() || $user->isTechnician()) {
-            $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
-        } else {
-            // Usuário comum: só vê setores relacionados aos seus chamados
-            $sectorIds = Ticket::where('user_id', $user->id)->distinct()->pluck('sector_id');
-            $sectors = Sector::whereIn('id', $sectorIds)->orderBy('name')->get();
-        }
-        
-        return view('tickets.index', compact('tickets', 'sectors'));
+public function index()
+{
+    $user = Auth::user();
+    
+    // Se não tiver empresa selecionada E for admin/técnico, redirecionar
+    if (($user->isAdmin() || $user->isTechnician()) && !session()->has('selected_company_id')) {
+        return redirect()->route('company.select');
     }
+    
+    $companyId = session('selected_company_id', $user->company_id);
+    
+    $query = Ticket::with(['user', 'sector']);
+    
+    if ($user->isAdmin() || $user->isTechnician()) {
+        // Admin ou Técnico: vê todos os chamados da empresa selecionada
+        $query->where('company_id', $companyId);
+    } else {
+        // Usuário comum: vê APENAS seus próprios chamados
+        $query->where('user_id', $user->id);
+    }
+    
+    // Aplicar filtros
+    if (request('search')) {
+        $query->where(function($q) {
+            $q->where('ticket_number', 'like', '%' . request('search') . '%')
+              ->orWhere('title', 'like', '%' . request('search') . '%');
+        });
+    }
+    
+    if (request('status')) {
+        $query->where('status', request('status'));
+    }
+    
+    if (request('priority')) {
+        $query->where('priority', request('priority'));
+    }
+    
+    if (request('sector_id')) {
+        $query->where('sector_id', request('sector_id'));
+    }
+    
+    $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
+    
+    // Buscar setores para o filtro
+    $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
+    
+    return view('tickets.index', compact('tickets', 'sectors'));
+}
 
     public function create()
     {
@@ -181,7 +175,6 @@ class TicketController extends Controller
     {
         $this->authorizeAccess($ticket);
         
-        // Bloqueia comentários em tickets resolvidos ou fechados
         if ($ticket->status == 'resolvido' || $ticket->status == 'fechado') {
             return back()->with('error', '❌ Este chamado está ' . $ticket->status . '. Não é possível adicionar novos comentários.');
         }
@@ -223,34 +216,23 @@ class TicketController extends Controller
         return back()->with('success', 'Comentário adicionado com sucesso!');
     }
 
-    /**
-     * Verificar permissão de acesso ao chamado
-     * - Admin: acesso total (qualquer chamado)
-     * - Técnico: acesso a chamados da sua empresa
-     * - Usuário comum: acesso APENAS aos seus próprios chamados
-     */
     private function authorizeAccess(Ticket $ticket)
     {
         $user = auth()->user();
 
-        // Admin tem acesso total
-        if ($user->isAdmin()) {
-            return true;
-        }
-        
-        // Técnico vê chamados da sua empresa
+        if ($user->isAdmin()) return true;
+
         if ($user->isTechnician()) {
             if ($ticket->company_id == session('selected_company_id', $user->company_id)) {
                 return true;
             }
-            abort(403, 'Acesso negado. Você não tem permissão para visualizar este chamado.');
+            abort(403, 'Acesso negado.');
         }
-        
-        // Usuário comum: só vê seus próprios chamados
+
         if ($ticket->user_id != $user->id) {
-            abort(403, 'Acesso negado. Você só pode visualizar seus próprios chamados.');
+            abort(403, 'Acesso negado.');
         }
-        
+
         return true;
     }
 }

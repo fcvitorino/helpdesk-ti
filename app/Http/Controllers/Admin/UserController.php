@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Sector;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -14,24 +15,20 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Verificar se é administrador
         if (!Auth::user()->isAdmin()) {
             abort(403);
         }
         
-        // 2. Pegar a empresa selecionada
         if (session()->has('selected_company_id')) {
             $companyId = session('selected_company_id');
         } else {
             $companyId = Auth::user()->company_id ?? 1;
         }
         
-        // 3. IMPORTANTE: Buscar usuários INCLUINDO os desativados (withTrashed)
         $query = User::where('company_id', $companyId)
                      ->with(['company', 'sector'])
-                     ->withTrashed(); // <-- LINHA MÁGICA! Mostra usuários inativos
+                     ->withTrashed();
         
-        // 4. Filtrar por nome ou email (se o campo não estiver vazio)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -40,25 +37,21 @@ class UserController extends Controller
             });
         }
         
-        // 5. Filtrar por perfil (admin, tecnico, usuario)
         if ($request->filled('role')) {
             $query->where('role', $request->role);
         }
         
-        // 6. Filtrar por status (ativo ou inativo)
         if ($request->filled('status')) {
             if ($request->status == 'active') {
-                $query->whereNull('deleted_at');  // Apenas ativos
+                $query->whereNull('deleted_at');
             } elseif ($request->status == 'inactive') {
-                $query->whereNotNull('deleted_at'); // Apenas inativos
+                $query->whereNotNull('deleted_at');
             }
         }
         
-        // 7. Paginar os resultados (15 por página)
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        $users = $query->latest()->paginate(15);
         $users->appends($request->all());
         
-        // 8. Mostrar a tela com os usuários
         return view('admin.users.index', compact('users'));
     }
 
@@ -82,8 +75,8 @@ class UserController extends Controller
         
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
+            'email' => 'required|email|unique:users,email',
+            'password' => ['required', 'min:8', new StrongPassword],
             'company_id' => 'required|exists:companies,id',
             'sector_id' => 'required|exists:sectors,id',
             'role' => 'required|in:admin,technician,user',
@@ -121,14 +114,20 @@ class UserController extends Controller
             abort(403);
         }
         
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'company_id' => 'required|exists:companies,id',
             'sector_id' => 'required|exists:sectors,id',
             'role' => 'required|in:admin,technician,user',
-            'password' => 'nullable|min:6|confirmed',
-        ]);
+        ];
+        
+        // Se a senha foi preenchida, validar com regra forte
+        if ($request->filled('password')) {
+            $rules['password'] = ['min:8', 'confirmed', new StrongPassword];
+        }
+        
+        $request->validate($rules);
         
         $user->name = $request->name;
         $user->email = $request->email;
@@ -169,9 +168,8 @@ class UserController extends Controller
             abort(403);
         }
         
-        // Buscar incluindo os deletados (com Trashed)
         $user = User::withTrashed()->findOrFail($id);
-        $user->restore(); // Restaurar da lixeira
+        $user->restore();
         
         return redirect()->route('admin.users.index')
             ->with('success', "Usuário {$user->name} reativado com sucesso!");
@@ -190,7 +188,6 @@ class UserController extends Controller
                 ->with('error', 'Você não pode desativar seu próprio usuário.');
         }
         
-        // Mandar para a lixeira (soft delete)
         $user->delete();
         
         return redirect()->route('admin.users.index')

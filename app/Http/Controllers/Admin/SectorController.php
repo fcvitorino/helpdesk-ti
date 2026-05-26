@@ -49,6 +49,15 @@ class SectorController extends Controller
             ->with('success', 'Setor criado com sucesso!');
     }
 
+    public function show(Sector $sector)
+    {
+        if (!Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        
+        return view('admin.sectors.show', compact('sector'));
+    }
+
     public function edit(Sector $sector)
     {
         if (!Auth::user()->isAdmin()) {
@@ -81,6 +90,16 @@ class SectorController extends Controller
     {
         if (!Auth::user()->isAdmin()) {
             abort(403);
+        }
+        
+        if ($sector->users()->count() > 0) {
+            return redirect()->route('admin.sectors.index')
+                ->with('error', 'Não é possível excluir um setor que possui usuários vinculados.');
+        }
+        
+        if ($sector->tickets()->count() > 0) {
+            return redirect()->route('admin.sectors.index')
+                ->with('error', 'Não é possível excluir um setor que possui chamados vinculados.');
         }
         
         $sector->delete();

@@ -21,13 +21,23 @@
                     </div>
                     <div class="card-body p-4">
                         
+                        @if($errors->any())
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
                             <strong>Você foi convidado!</strong><br>
-                            Email: {{ $invite->email }}<br>
-                            Perfil: {{ ucfirst($invite->role) }}<br>
-                            Empresa: {{ $invite->company->name ?? '-' }}<br>
-                            Setor: {{ $invite->sector->name ?? '-' }}
+                            📧 Email: {{ $invite->email }}<br>
+                            👔 Perfil: {{ ucfirst($invite->role) }}<br>
+                            🏢 Empresa: {{ $invite->company->name ?? '-' }}<br>
+                            📂 Setor: {{ $invite->sector->name ?? '-' }}
                         </div>
                         
                         <form method="POST" action="{{ route('invite.register', $invite->token) }}">
@@ -41,6 +51,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Senha</label>
                                 <input type="password" name="password" class="form-control" required>
+                                <small class="text-muted">
+                                    ⚠️ A senha deve ter no mínimo 8 caracteres, 1 letra MAIÚSCULA e 1 caractere especial (! @ # $ % & * ?)
+                                </small>
                             </div>
                             
                             <div class="mb-3">

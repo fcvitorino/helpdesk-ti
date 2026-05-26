@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\InviteRegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TicketController;
@@ -10,6 +11,13 @@ use App\Http\Controllers\Admin\SectorController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\InviteController;
 use App\Http\Controllers\CompanySwitchController;
+use App\Http\Controllers\ProfileController;
+
+// ========== ROTAS DE RECUPERAÇÃO DE SENHA ==========
+Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/password/reset/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [ForgotPasswordController::class, 'reset'])->name('password.update');
 
 // ========== ROTAS DE AUTENTICAÇÃO ==========
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -21,12 +29,28 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// ========== ROTA PARA SELECIONAR EMPRESA ==========
+Route::middleware(['auth'])->group(function () {
+    Route::get('/selecionar-empresa', function () {
+        $companies = App\Models\Company::where('is_active', true)->orderBy('name')->get();
+        return view('company.select', compact('companies'));
+    })->name('company.select');
+    
+    Route::post('/selecionar-empresa', [CompanySwitchController::class, 'switch'])->name('company.select.store');
+});
+
 // ========== ROTAS DE ACEITE DE CONVITE ==========
 Route::get('/register/{token}', [InviteRegisterController::class, 'showRegisterForm'])->name('invite.register.form');
 Route::post('/register/{token}', [InviteRegisterController::class, 'register'])->name('invite.register');
 
-// ========== ROTAS AUTENTICADAS ==========
+// ========== ROTAS DE PERFIL (ALTERAR SENHA) ==========
 Route::middleware(['auth'])->group(function () {
+    Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password');
+});
+
+// ========== ROTAS PROTEGIDAS ==========
+Route::middleware(['auth', 'check.company'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -37,11 +61,14 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
         Route::resource('companies', CompanyController::class);
         Route::patch('companies/{company}/toggle', [CompanyController::class, 'toggleActive'])->name('companies.toggle');
+        
         Route::resource('sectors', SectorController::class);
         Route::get('sectors/by-company/{company}', [SectorController::class, 'getByCompany'])->name('sectors.byCompany');
+        
         Route::resource('users', UserController::class);
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        
         Route::resource('invites', InviteController::class);
         Route::post('invites/{invite}/resend', [InviteController::class, 'resend'])->name('invites.resend');
         Route::patch('invites/{invite}/cancel', [InviteController::class, 'cancel'])->name('invites.cancel');

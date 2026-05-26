@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Convite HelpDesk TI</title>
+    <title>Recuperação de Senha - HelpDesk TI</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,21 +29,23 @@
         }
         .button {
             display: inline-block;
-            background: #4a90e2;
-            color: white;
+            background: #ffc107;
+            color: #333;
             padding: 12px 24px;
             text-decoration: none;
             border-radius: 5px;
             margin: 20px 0;
+            font-weight: bold;
         }
         .button:hover {
-            background: #357abd;
+            background: #e0a800;
         }
         .info {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
+            border-left: 4px solid #ffc107;
         }
         .footer {
             background: #f8f9fa;
@@ -62,52 +64,44 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎫 HelpDesk TI</h1>
+            <h1>🔐 HelpDesk TI</h1>
             <p>Sistema de Chamados Interno</p>
         </div>
         
         <div class="content">
-            <h2>Olá, você foi convidado!</h2>
+            <h2>Olá!</h2>
             
-            <p>Um administrador convidou você para acessar o sistema de chamados <strong>HelpDesk TI</strong>.</p>
+            <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>HelpDesk TI</strong>.</p>
             
             <div class="info">
-                <p><strong>📧 Seu email:</strong> <?php echo e($invite->email); ?></p>
-                <p><strong>👔 Perfil:</strong> 
-                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($invite->role == 'admin'): ?>
-                        Administrador
-                    <?php elseif($invite->role == 'technician'): ?>
-                        Técnico
-                    <?php else: ?>
-                        Usuário
-                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                </p>
-                <p><strong>🏢 Empresa:</strong> <?php echo e($invite->company->name ?? 'Não definida'); ?></p>
-                <p><strong>📅 Expira em:</strong> <?php echo e($invite->expires_at->format('d/m/Y')); ?></p>
+                <p><strong>📧 E-mail:</strong> {{ $email }}</p>
+                <p><strong>⏰ Solicitação feita em:</strong> {{ now()->format('d/m/Y H:i') }}</p>
             </div>
             
-            <p>Para aceitar o convite e criar sua senha, clique no botão abaixo:</p>
+            <p>Clique no botão abaixo para criar uma nova senha:</p>
             
             <p style="text-align: center;">
-                <a href="<?php echo e(url('register/' . $invite->token)); ?>" class="button" style="background: #28a745; color: white; display: inline-block; padding: 12px 24px; text-decoration: none; border-radius: 5px;">
-                    ✅ Aceitar Convite
+                <a href="{{ url('/password/reset/' . $token . '?email=' . $email) }}" class="button">
+                    🔑 Redefinir Senha
                 </a>
             </p>
             
             <p style="text-align: center; font-size: 12px; color: #666;">
                 Ou copie e cole o link abaixo no seu navegador:<br>
-                <small><?php echo e(url('register/' . $invite->token)); ?></small>
+                <small>{{ url('/password/reset/' . $token . '?email=' . $email) }}</small>
             </p>
             
             <hr>
             
-            <p><small>Este link expira em 7 dias.</small></p>
+            <p><small>Este link expira em 60 minutos por razões de segurança.</small></p>
+            
+            <p><small>Se você não solicitou essa alteração, ignore este e-mail. Nenhuma alteração será feita na sua conta.</small></p>
         </div>
         
         <div class="footer">
             <p>Este é um email automático, por favor não responda.</p>
-            <p>HelpDesk TI - Sistema de Chamados &copy; <?php echo e(date('Y')); ?></p>
+            <p>HelpDesk TI - Sistema de Chamados &copy; {{ date('Y') }}</p>
         </div>
     </div>
 </body>
-</html><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/emails/invite.blade.php ENDPATH**/ ?>
+</html>

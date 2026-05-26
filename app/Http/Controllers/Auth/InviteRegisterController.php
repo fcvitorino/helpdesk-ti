@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
 use App\Models\User;
+use App\Rules\StrongPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -39,10 +40,9 @@ class InviteRegisterController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'confirmed', new StrongPassword],
         ]);
 
-        // Criar o usuário
         $user = User::create([
             'name' => $request->name,
             'email' => $invite->email,
@@ -53,10 +53,8 @@ class InviteRegisterController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        // Atualizar status do convite
         $invite->update(['status' => 'accepted']);
 
-        // Logar o usuário
         auth()->login($user);
 
         return redirect()->route('dashboard')

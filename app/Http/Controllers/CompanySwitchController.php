@@ -8,10 +8,18 @@ use Illuminate\Support\Facades\Auth;
 
 class CompanySwitchController extends Controller
 {
-    public function switch($companyId)
+    public function switch(Request $request, $companyId = null)
     {
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
+        $user = Auth::user();
+        
+        // Permitir apenas Admin e Técnico
+        if (!$user->isAdmin() && !$user->isTechnician()) {
+            abort(403, 'Acesso negado. Apenas administradores e técnicos podem trocar de empresa.');
+        }
+        
+        // Se veio de POST (formulário de seleção)
+        if ($request->isMethod('post')) {
+            $companyId = $request->company_id;
         }
         
         $company = Company::findOrFail($companyId);
@@ -19,18 +27,19 @@ class CompanySwitchController extends Controller
         session(['selected_company_id' => $company->id]);
         session(['selected_company_name' => $company->name]);
         
-        return redirect()->back()->with('success', 'Visualizando empresa: ' . $company->name);
+        return redirect()->route('dashboard')
+            ->with('success', "Empresa alterada para: {$company->name}");
     }
-
+    
     public function reset()
     {
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Acesso negado.');
-        }
+        $user = Auth::user();
         
-        session()->forget('selected_company_id');
-        session()->forget('selected_company_name');
+        // Usuário comum: volta para empresa do seu cadastro
+        session(['selected_company_id' => $user->company_id]);
+        session(['selected_company_name' => $user->company->name ?? '']);
         
-        return redirect()->back()->with('success', 'Voltou para sua empresa padrão.');
+        return redirect()->route('dashboard')
+            ->with('success', 'Voltou para sua empresa padrão.');
     }
 }

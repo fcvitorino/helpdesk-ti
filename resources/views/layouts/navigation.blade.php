@@ -22,14 +22,18 @@
                         <i class="bi bi-ticket"></i> Chamados
                     </a>
                 </li>
+                
+                <!-- SÓ MOSTRA "NOVO CHAMADO" PARA USUÁRIOS COMUNS (NÃO ADMIN E NÃO TÉCNICO) -->
+                @if(!auth()->user()->isAdmin() && !auth()->user()->isTechnician())
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('tickets.create') }}">
                         <i class="bi bi-plus-circle"></i> Novo Chamado
                     </a>
                 </li>
+                @endif
                 
                 <!-- Configurações - Dropdown (apenas para Admin) -->
-                @if(auth()->check() && auth()->user()->isAdmin())
+                @if(auth()->user()->isAdmin())
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Configurações
@@ -59,8 +63,8 @@
                 </li>
                 @endif
                 
-                <!-- Seletor de Empresa (apenas para Admin logado) -->
-                @if(auth()->check() && auth()->user()->isAdmin())
+                <!-- Seletor de Empresa (para Admin e Técnico) -->
+                @if(auth()->user()->isAdmin() || auth()->user()->isTechnician())
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-building"></i> 
