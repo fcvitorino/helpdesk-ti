@@ -60,7 +60,7 @@
         <div class="col-md-6">
             <div class="card mb-3">
                 <div class="card-header bg-secondary text-white">
-                    <i class="bi bi-geo-alt"></i> Chamados por Local
+                    <i class="bi bi-geo-alt"></i>  Chamados por Categoria
                 </div>
                 <div class="card-body">
                     <canvas id="chartLocal" style="max-height: 300px;"></canvas>
@@ -71,7 +71,7 @@
         <div class="col-md-12">
             <div class="card mb-3">
                 <div class="card-header bg-secondary text-white">
-                    <i class="bi bi-geo-alt"></i> Chamados por Local
+                    <i class="bi bi-geo-alt"></i> Chamados por Categoria
                 </div>
                 <div class="card-body">
                     <canvas id="chartLocal" style="max-height: 300px;"></canvas>

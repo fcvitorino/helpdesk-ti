@@ -6,63 +6,56 @@ use App\Models\Ticket;
 use App\Models\Sector;
 use App\Models\Reply;
 use App\Models\Attachment;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
-    /**
-     * Listar chamados com base no perfil do usuário
-     */
-public function index()
-{
-    $user = Auth::user();
-    
-    // Se não tiver empresa selecionada E for admin/técnico, redirecionar
-    if (($user->isAdmin() || $user->isTechnician()) && !session()->has('selected_company_id')) {
-        return redirect()->route('company.select');
+    public function index()
+    {
+        $user = Auth::user();
+        
+        if (($user->isAdmin() || $user->isTechnician()) && !session()->has('selected_company_id')) {
+            return redirect()->route('company.select');
+        }
+        
+        $companyId = session('selected_company_id', $user->company_id);
+        
+        $query = Ticket::with(['user', 'sector']);
+        
+        if ($user->isAdmin() || $user->isTechnician()) {
+            $query->where('company_id', $companyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+        
+        if (request('search')) {
+            $query->where(function($q) {
+                $q->where('ticket_number', 'like', '%' . request('search') . '%')
+                  ->orWhere('title', 'like', '%' . request('search') . '%');
+            });
+        }
+        
+        if (request('status')) {
+            $query->where('status', request('status'));
+        }
+        
+        if (request('priority')) {
+            $query->where('priority', request('priority'));
+        }
+        
+        if (request('sector_id')) {
+            $query->where('sector_id', request('sector_id'));
+        }
+        
+        $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
+        
+        return view('tickets.index', compact('tickets', 'sectors'));
     }
-    
-    $companyId = session('selected_company_id', $user->company_id);
-    
-    $query = Ticket::with(['user', 'sector']);
-    
-    if ($user->isAdmin() || $user->isTechnician()) {
-        // Admin ou Técnico: vê todos os chamados da empresa selecionada
-        $query->where('company_id', $companyId);
-    } else {
-        // Usuário comum: vê APENAS seus próprios chamados
-        $query->where('user_id', $user->id);
-    }
-    
-    // Aplicar filtros
-    if (request('search')) {
-        $query->where(function($q) {
-            $q->where('ticket_number', 'like', '%' . request('search') . '%')
-              ->orWhere('title', 'like', '%' . request('search') . '%');
-        });
-    }
-    
-    if (request('status')) {
-        $query->where('status', request('status'));
-    }
-    
-    if (request('priority')) {
-        $query->where('priority', request('priority'));
-    }
-    
-    if (request('sector_id')) {
-        $query->where('sector_id', request('sector_id'));
-    }
-    
-    $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
-    
-    // Buscar setores para o filtro
-    $sectors = Sector::where('company_id', $companyId)->orderBy('name')->get();
-    
-    return view('tickets.index', compact('tickets', 'sectors'));
-}
 
     public function create()
     {
@@ -107,6 +100,8 @@ public function index()
             'user_id' => auth()->id(),
             'sector_id' => auth()->user()->sector_id,
         ]);
+
+        NotificationHelper::notifyNewTicket($ticket);
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', "Chamado {$ticket->ticket_number} aberto com sucesso!");
@@ -162,11 +157,14 @@ public function index()
             'status' => 'required|in:aberto,em_andamento,resolvido,fechado',
         ]);
 
+        $oldStatus = $ticket->status;
         $ticket->status = $request->status;
         if ($request->status == 'resolvido') {
             $ticket->resolved_at = now();
         }
         $ticket->save();
+
+        NotificationHelper::notifyStatusChange($ticket, $oldStatus, $request->status, auth()->user());
 
         return back()->with('success', 'Status atualizado com sucesso!');
     }
@@ -212,6 +210,8 @@ public function index()
             $ticket->status = 'em_andamento';
             $ticket->save();
         }
+
+        NotificationHelper::notifyNewComment($ticket, $reply, auth()->user());
         
         return back()->with('success', 'Comentário adicionado com sucesso!');
     }

@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\InviteController;
 use App\Http\Controllers\CompanySwitchController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 
 // ========== ROTAS DE RECUPERAÇÃO DE SENHA ==========
 Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
@@ -47,6 +48,14 @@ Route::post('/register/{token}', [InviteRegisterController::class, 'register'])-
 Route::middleware(['auth'])->group(function () {
     Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password');
+});
+
+// ========== ROTAS DE NOTIFICAÇÕES ==========
+Route::middleware(['auth'])->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
+    Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
 });
 
 // ========== ROTAS PROTEGIDAS ==========

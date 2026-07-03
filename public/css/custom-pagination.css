@@ -1,0 +1,36 @@
+.pagination-sm .page-link {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+    margin: 0 2px;
+    border-radius: 0.25rem;
+}
+
+.pagination {
+    gap: 0.15rem;
+}
+
+.pagination .page-item .page-link {
+    border-radius: 0.25rem;
+}
+
+.pagination .page-item:not(.active) .page-link:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    transition: all 0.15s ease;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+}
+
+.text-muted.small {
+    font-size: 0.75rem;
+    letter-spacing: 0.3px;
+}

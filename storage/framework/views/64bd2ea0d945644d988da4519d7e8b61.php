@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <a class="navbar-brand" href="<?php echo e(route('dashboard')); ?>">
             <i class="bi bi-headset"></i> HelpDesk TI
@@ -9,7 +9,6 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 
-                <!-- SÓ MOSTRA O MENU SE O USUÁRIO ESTIVER LOGADO -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->check()): ?>
                 
                 <li class="nav-item">
@@ -23,7 +22,6 @@
                     </a>
                 </li>
                 
-                <!-- SÓ MOSTRA "NOVO CHAMADO" PARA USUÁRIOS COMUNS (NÃO ADMIN E NÃO TÉCNICO) -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!auth()->user()->isAdmin() && !auth()->user()->isTechnician()): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?php echo e(route('tickets.create')); ?>">
@@ -32,38 +30,20 @@
                 </li>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- Configurações - Dropdown (apenas para Admin) -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isAdmin()): ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-gear"></i> Configurações
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item" href="<?php echo e(route('admin.companies.index')); ?>">
-                                <i class="bi bi-building"></i> Empresas
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="<?php echo e(route('admin.sectors.index')); ?>">
-                                <i class="bi bi-tags"></i> Setores
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="<?php echo e(route('admin.invites.index')); ?>">
-                                <i class="bi bi-envelope"></i> Convites
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="<?php echo e(route('admin.users.index')); ?>">
-                                <i class="bi bi-people"></i> Usuários
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item" href="<?php echo e(route('admin.companies.index')); ?>"><i class="bi bi-building"></i> Empresas</a></li>
+                        <li><a class="dropdown-item" href="<?php echo e(route('admin.sectors.index')); ?>"><i class="bi bi-tags"></i> Setores</a></li>
+                        <li><a class="dropdown-item" href="<?php echo e(route('admin.invites.index')); ?>"><i class="bi bi-envelope"></i> Convites</a></li>
+                        <li><a class="dropdown-item" href="<?php echo e(route('admin.users.index')); ?>"><i class="bi bi-people"></i> Usuários</a></li>
                     </ul>
                 </li>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- Seletor de Empresa (para Admin e Técnico) -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()->isAdmin() || auth()->user()->isTechnician()): ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
@@ -85,16 +65,26 @@
                         </li>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item text-danger" href="<?php echo e(route('switch.company.reset')); ?>">
-                                <i class="bi bi-arrow-left"></i> Voltar para minha empresa
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item text-danger" href="<?php echo e(route('switch.company.reset')); ?>"><i class="bi bi-arrow-left"></i> Voltar para minha empresa</a></li>
                     </ul>
                 </li>
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- Menu do Usuário (só se estiver logado) -->
+                <!-- ÍCONE DE NOTIFICAÇÕES COM BADGE MENOR -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span id="notifications-badge" class="badge rounded-pill bg-danger" style="position: absolute; top: -6px; left: 14px; font-size: 9px; min-width: 14px; height: 14px; display: none; align-items: center; justify-content: center; padding: 0 3px; line-height: 1;">
+                            0
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" id="notifications-list" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                        <li><h6 class="dropdown-header">📢 Notificações</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="text-center text-muted py-3">Carregando...</li>
+                    </ul>
+                </li>
+                
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i> <?php echo e(auth()->user()->name); ?>
@@ -104,12 +94,11 @@
                         <li><span class="dropdown-item-text">Email: <?php echo e(auth()->user()->email); ?></span></li>
                         <li><span class="dropdown-item-text">Perfil: <?php echo e(ucfirst(auth()->user()->role)); ?></span></li>
                         <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="<?php echo e(route('profile.edit')); ?>"><i class="bi bi-key"></i> Alterar Senha</a></li>
                         <li>
                             <form method="POST" action="<?php echo e(route('logout')); ?>">
                                 <?php echo csrf_field(); ?>
-                                <button type="submit" class="dropdown-item">
-                                    <i class="bi bi-box-arrow-right"></i> Sair
-                                </button>
+                                <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Sair</button>
                             </form>
                         </li>
                     </ul>
@@ -117,7 +106,6 @@
                 
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 
-                <!-- SÓ MOSTRA O BOTÃO DE LOGIN SE NÃO ESTIVER LOGADO -->
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->guard()->guest()): ?>
                 <li class="nav-item">
                     <a class="nav-link btn btn-outline-light px-3" href="<?php echo e(route('login')); ?>">
@@ -129,4 +117,111 @@
             </ul>
         </div>
     </div>
-</nav><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>
+</nav>
+
+<style>
+    body { padding-top: 70px; }
+    .fixed-top { position: fixed; top: 0; right: 0; left: 0; z-index: 1030; }
+    .notification-item { white-space: normal !important; padding: 10px 15px; }
+    .notification-item:hover { background-color: #f8f9fa; }
+</style>
+
+<script>
+    function loadNotifications() {
+        fetch('<?php echo e(route("notifications.index")); ?>')
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById('notifications-list');
+                const badge = document.getElementById('notifications-badge');
+                const unreadCount = data.data.filter(n => !n.is_read).length;
+                
+                if (unreadCount > 0) {
+                    badge.style.display = 'inline-flex';
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+                
+                if (!data.data || data.data.length === 0) {
+                    list.innerHTML = '<li class="text-center text-muted py-3">📭 Nenhuma notificação</li>';
+                    return;
+                }
+                
+                let html = '<li><h6 class="dropdown-header">📢 Notificações</h6></li><li><hr class="dropdown-divider"></li>';
+                data.data.forEach(notif => {
+                    const bgClass = notif.is_read ? '' : 'bg-light fw-bold';
+                    let icon = '📌';
+                    if (notif.type === 'new_ticket') icon = '🎫';
+                    if (notif.type === 'new_comment') icon = '💬';
+                    if (notif.type === 'status_change') icon = '🔄';
+                    
+                    const ticketUrl = '<?php echo e(url("/tickets")); ?>/' + notif.ticket_id;
+                    
+                    html += `
+                        <li class="${bgClass}">
+                            <a class="dropdown-item notification-item" href="#" data-id="${notif.id}" data-url="${ticketUrl}">
+                                <div>
+                                    <strong>${icon} ${notif.title}</strong>
+                                    <small class="text-muted d-block">${notif.message}</small>
+                                    <small class="text-muted">${new Date(notif.created_at).toLocaleString()}</small>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                    `;
+                });
+                html += '<li><div class="dropdown-footer text-center p-2"><button class="btn btn-sm btn-link" id="mark-all-read">✅ Marcar todas como lidas</button></div></li>';
+                list.innerHTML = html;
+                
+                document.querySelectorAll('.notification-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const id = this.dataset.id;
+                        const url = this.dataset.url;
+                        
+                        fetch('<?php echo e(url("/notifications")); ?>/' + id + '/read', { 
+                            method: 'POST', 
+                            headers: { 
+                                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                                'Content-Type': 'application/json'
+                            } 
+                        })
+                        .then(() => {
+                            window.location.href = url;
+                        });
+                    });
+                });
+                
+                const markAllBtn = document.getElementById('mark-all-read');
+                if (markAllBtn) {
+                    markAllBtn.addEventListener('click', function() {
+                        fetch('<?php echo e(route("notifications.mark-all-read")); ?>', { 
+                            method: 'POST', 
+                            headers: { 
+                                'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                                'Content-Type': 'application/json'
+                            } 
+                        })
+                        .then(() => loadNotifications());
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao carregar notificações:', error);
+                document.getElementById('notifications-list').innerHTML = '<li class="text-center text-danger py-3">❌ Erro ao carregar</li>';
+            });
+    }
+    
+    document.getElementById('notificationsDropdown')?.addEventListener('click', loadNotifications);
+    
+    fetch('<?php echo e(route("notifications.unread-count")); ?>')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notifications-badge');
+            if (data.count > 0) {
+                badge.style.display = 'inline-flex';
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+            }
+        })
+        .catch(error => console.error('Erro ao carregar contador:', error));
+</script><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/layouts/navigation.blade.php ENDPATH**/ ?>

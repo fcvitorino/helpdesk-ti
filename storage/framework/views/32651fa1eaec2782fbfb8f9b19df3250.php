@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Recuperação de Senha - HelpDesk TI</title>
+    <title>Notificação - HelpDesk TI</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,13 +24,28 @@
             padding: 20px;
             text-align: center;
         }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
         .content {
             padding: 30px;
         }
+        .content h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
         .button {
             display: inline-block;
-            background: #ffc107;
-            color: #333;
+            background: #4a90e2;
+            color: white;
             padding: 12px 24px;
             text-decoration: none;
             border-radius: 5px;
@@ -38,14 +53,7 @@
             font-weight: bold;
         }
         .button:hover {
-            background: #e0a800;
-        }
-        .info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            border-left: 4px solid #ffc107;
+            background: #357abd;
         }
         .footer {
             background: #f8f9fa;
@@ -64,44 +72,34 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 HelpDesk TI</h1>
+            <h1>🔔 HelpDesk TI</h1>
             <p>Sistema de Chamados Interno</p>
         </div>
         
         <div class="content">
-            <h2>Olá!</h2>
+            <h2><?php echo e($title ?? 'Notificação'); ?></h2>
             
-            <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>HelpDesk TI</strong>.</p>
+            <p>Olá, <strong><?php echo e($user->name ?? 'Usuário'); ?></strong>!</p>
             
             <div class="info">
-                <p><strong>📧 E-mail:</strong> <?php echo e($email); ?></p>
-                <p><strong>⏰ Solicitação feita em:</strong> <?php echo e(now()->format('d/m/Y H:i')); ?></p>
+                <p style="margin: 0;"><?php echo e($message ?? 'Você tem uma nova notificação.'); ?></p>
             </div>
             
-            <p>Clique no botão abaixo para criar uma nova senha:</p>
-            
             <p style="text-align: center;">
-                <a href="<?php echo e(url('/password/reset/' . $token . '?email=' . $email)); ?>" class="button">
-                    🔑 Redefinir Senha
+                <a href="<?php echo e(url('/tickets/' . ($ticket->id ?? 1))); ?>" class="button">
+                    🔍 Visualizar Chamado #<?php echo e($ticket->ticket_number ?? 'N/A'); ?>
+
                 </a>
-            </p>
-            
-            <p style="text-align: center; font-size: 12px; color: #666;">
-                Ou copie e cole o link abaixo no seu navegador:<br>
-                <small><?php echo e(url('/password/reset/' . $token . '?email=' . $email)); ?></small>
             </p>
             
             <hr>
             
-            <p><small>Este link expira em 60 minutos por razões de segurança.</small></p>
-            
-            <p><small>Se você não solicitou essa alteração, ignore este e-mail. Nenhuma alteração será feita na sua conta.</small></p>
+            <small>Este é um email automático, por favor não responda.</small>
         </div>
         
         <div class="footer">
-            <p>Este é um email automático, por favor não responda.</p>
             <p>HelpDesk TI - Sistema de Chamados &copy; <?php echo e(date('Y')); ?></p>
         </div>
     </div>
 </body>
-</html><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/auth/passwords/reset-email.blade.php ENDPATH**/ ?>
+</html><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/emails/notification.blade.php ENDPATH**/ ?>
