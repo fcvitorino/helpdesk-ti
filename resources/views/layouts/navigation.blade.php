@@ -40,6 +40,9 @@
                         <li><a class="dropdown-item" href="{{ route('admin.sectors.index') }}"><i class="bi bi-tags"></i> Setores</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.invites.index') }}"><i class="bi bi-envelope"></i> Convites</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i class="bi bi-people"></i> Usuários</a></li>
+                        <!-- NOVO LINK DE AUDITORIA -->
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.audit.index') }}"><i class="bi bi-clock-history"></i> Auditoria</a></li>
                     </ul>
                 </li>
                 @endif

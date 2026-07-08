@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\InviteController;
 use App\Http\Controllers\CompanySwitchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\AuditController;
 
 // ========== ROTAS DE RECUPERAÇÃO DE SENHA ==========
 Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
@@ -81,6 +82,10 @@ Route::middleware(['auth', 'check.company'])->group(function () {
         Route::resource('invites', InviteController::class);
         Route::post('invites/{invite}/resend', [InviteController::class, 'resend'])->name('invites.resend');
         Route::patch('invites/{invite}/cancel', [InviteController::class, 'cancel'])->name('invites.cancel');
+
+        // ========== AUDITORIA ==========
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/export-pdf', [AuditController::class, 'exportPdf'])->name('audit.exportPdf');
     });
 
     Route::get('/switch-company/{company}', [CompanySwitchController::class, 'switch'])->name('switch.company');

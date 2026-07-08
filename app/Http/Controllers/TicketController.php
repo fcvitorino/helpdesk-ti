@@ -7,6 +7,7 @@ use App\Models\Sector;
 use App\Models\Reply;
 use App\Models\Attachment;
 use App\Helpers\NotificationHelper;
+use App\Helpers\ActivityLogHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -182,6 +183,7 @@ class TicketController extends Controller
             'attachment' => 'nullable|file|max:5120',
         ]);
         
+        // Cria o comentário (reply)
         $reply = Reply::create([
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
@@ -189,6 +191,7 @@ class TicketController extends Controller
             'is_support' => in_array(auth()->user()->role, ['admin', 'technician']),
         ]);
         
+        // Processa anexo (se houver)
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $filename = time() . '_' . $file->getClientOriginalName();
@@ -206,11 +209,17 @@ class TicketController extends Controller
             ]);
         }
         
+        // ========== NOVO: LOG MANUAL DO COMENTÁRIO ==========
+        ActivityLogHelper::logComment($ticket, $request->message);
+        // ===================================================
+        
+        // Se o chamado estava aberto, muda para "em_andamento"
         if ($ticket->status == 'aberto') {
             $ticket->status = 'em_andamento';
             $ticket->save();
         }
 
+        // Dispara notificação
         NotificationHelper::notifyNewComment($ticket, $reply, auth()->user());
         
         return back()->with('success', 'Comentário adicionado com sucesso!');
