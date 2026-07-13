@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title>Login - VitDesk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -31,28 +31,30 @@
                     </div>
                     <div class="card-body p-4">
                         
-                        @if(session('error'))
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session('error')): ?>
                             <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+                                <i class="bi bi-exclamation-triangle"></i> <?php echo e(session('error')); ?>
+
                             </div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         
-                        @if(session('success'))
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session('success')): ?>
                             <div class="alert alert-success">
-                                <i class="bi bi-check-circle"></i> {{ session('success') }}
+                                <i class="bi bi-check-circle"></i> <?php echo e(session('success')); ?>
+
                             </div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         
-                        @if($errors->any())
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($errors->any()): ?>
                             <div class="alert alert-danger">
-                                @foreach($errors->all() as $error)
-                                    <small>{{ $error }}</small><br>
-                                @endforeach
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <small><?php echo e($error); ?></small><br>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         
-                        <form method="POST" action="{{ route('login.post') }}">
-                            @csrf
+                        <form method="POST" action="<?php echo e(route('login.post')); ?>">
+                            <?php echo csrf_field(); ?>
                             
                             <div class="mb-3">
                                 <label class="form-label">E-mail</label>
@@ -85,7 +87,7 @@
                         <hr>
                         
                         <div class="text-center mt-3">
-                            <a href="{{ route('password.request') }}" class="text-decoration-none">
+                            <a href="<?php echo e(route('password.request')); ?>" class="text-decoration-none">
                                 <i class="bi bi-question-circle"></i> Esqueci minha senha
                             </a>
                         </div>
@@ -97,4 +99,4 @@
         </div>
     </div>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\helpdesk\resources\views/auth/login.blade.php ENDPATH**/ ?>

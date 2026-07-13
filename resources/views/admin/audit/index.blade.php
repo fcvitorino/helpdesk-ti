@@ -19,14 +19,15 @@
                     <form method="GET" action="{{ route('admin.audit.index') }}" class="row g-3 mb-4">
                         <div class="col-md-2">
                             <label class="form-label">Chamado</label>
-                            <select name="ticket_id" class="form-select form-select-sm">
+                            <input type="text" name="ticket_id" class="form-control form-control-sm" 
+                                   list="ticket-list" placeholder="Digite ou selecione..." 
+                                   value="{{ request('ticket_id') }}">
+                            <datalist id="ticket-list">
                                 <option value="">Todos</option>
                                 @foreach($tickets as $id => $number)
-                                    <option value="{{ $id }}" {{ request('ticket_id') == $id ? 'selected' : '' }}>
-                                        #{{ $number }}
-                                    </option>
+                                    <option value="{{ $id }}">#{{ $number }}</option>
                                 @endforeach
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Setor</label>
@@ -41,14 +42,15 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Usuário</label>
-                            <select name="user_id" class="form-select form-select-sm">
+                            <input type="text" name="user_id" class="form-control form-control-sm" 
+                                   list="user-list" placeholder="Digite ou selecione..." 
+                                   value="{{ request('user_id') }}">
+                            <datalist id="user-list">
                                 <option value="">Todos</option>
                                 @foreach($users as $id => $name)
-                                    <option value="{{ $id }}" {{ request('user_id') == $id ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
+                                    <option value="{{ $id }}">{{ $name }}</option>
                                 @endforeach
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Ação</label>
@@ -131,7 +133,6 @@
                                             @endphp
 
                                             @if($props && $props->count() > 0)
-                                                {{-- Verifica se é um log de atualização (com attributes e old) --}}
                                                 @if($props->has('attributes') || $props->has('old'))
                                                     <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#log-{{ $log->id }}">
                                                         <i class="bi bi-eye"></i> Ver alterações
@@ -148,9 +149,7 @@
                                                             @endif
                                                         </div>
                                                     </div>
-
                                                 @else
-                                                    {{-- Log manual (ex: comentário, anexo, status) --}}
                                                     <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="collapse" data-bs-target="#log-{{ $log->id }}">
                                                         <i class="bi bi-eye"></i> Ver detalhes
                                                     </button>

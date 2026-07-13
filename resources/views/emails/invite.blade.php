@@ -62,14 +62,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎫 HelpDesk TI</h1>
+            <h1>🎫 VitDesk</h1>
             <p>Sistema de Chamados Interno</p>
         </div>
         
         <div class="content">
             <h2>Olá, você foi convidado!</h2>
             
-            <p>Um administrador convidou você para acessar o sistema de chamados <strong>HelpDesk TI</strong>.</p>
+            <p>Um administrador convidou você para acessar o sistema de chamados <strong>VitDesk</strong>.</p>
             
             <div class="info">
                 <p><strong>📧 Seu email:</strong> {{ $invite->email }}</p>
@@ -106,7 +106,7 @@
         
         <div class="footer">
             <p>Este é um email automático, por favor não responda.</p>
-            <p>HelpDesk TI - Sistema de Chamados &copy; {{ date('Y') }}</p>
+            <p>VitDesk - Sistema de Chamados &copy; {{ date('Y') }}</p>
         </div>
     </div>
 </body>

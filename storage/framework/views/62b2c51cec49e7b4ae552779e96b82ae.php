@@ -19,15 +19,15 @@
                     <form method="GET" action="<?php echo e(route('admin.audit.index')); ?>" class="row g-3 mb-4">
                         <div class="col-md-2">
                             <label class="form-label">Chamado</label>
-                            <select name="ticket_id" class="form-select form-select-sm">
+                            <input type="text" name="ticket_id" class="form-control form-control-sm" 
+                                   list="ticket-list" placeholder="Digite ou selecione..." 
+                                   value="<?php echo e(request('ticket_id')); ?>">
+                            <datalist id="ticket-list">
                                 <option value="">Todos</option>
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $tickets; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $id => $number): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($id); ?>" <?php echo e(request('ticket_id') == $id ? 'selected' : ''); ?>>
-                                        #<?php echo e($number); ?>
-
-                                    </option>
+                                    <option value="<?php echo e($id); ?>">#<?php echo e($number); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Setor</label>
@@ -43,15 +43,15 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Usuário</label>
-                            <select name="user_id" class="form-select form-select-sm">
+                            <input type="text" name="user_id" class="form-control form-control-sm" 
+                                   list="user-list" placeholder="Digite ou selecione..." 
+                                   value="<?php echo e(request('user_id')); ?>">
+                            <datalist id="user-list">
                                 <option value="">Todos</option>
                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $id => $name): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($id); ?>" <?php echo e(request('user_id') == $id ? 'selected' : ''); ?>>
-                                        <?php echo e($name); ?>
-
-                                    </option>
+                                    <option value="<?php echo e($id); ?>"><?php echo e($name); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                            </select>
+                            </datalist>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Ação</label>
@@ -136,7 +136,6 @@
                                             ?>
 
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($props && $props->count() > 0): ?>
-                                                
                                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($props->has('attributes') || $props->has('old')): ?>
                                                     <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="collapse" data-bs-target="#log-<?php echo e($log->id); ?>">
                                                         <i class="bi bi-eye"></i> Ver alterações
@@ -153,9 +152,7 @@
                                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                         </div>
                                                     </div>
-
                                                 <?php else: ?>
-                                                    
                                                     <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="collapse" data-bs-target="#log-<?php echo e($log->id); ?>">
                                                         <i class="bi bi-eye"></i> Ver detalhes
                                                     </button>

@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <a class="navbar-brand" href="{{ route('dashboard') }}">
-            <i class="bi bi-headset"></i> HelpDesk TI
+            <i class="bi bi-headset"></i> VitDesk
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -40,6 +40,7 @@
                         <li><a class="dropdown-item" href="{{ route('admin.sectors.index') }}"><i class="bi bi-tags"></i> Setores</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.invites.index') }}"><i class="bi bi-envelope"></i> Convites</a></li>
                         <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i class="bi bi-people"></i> Usuários</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.reports.index') }}"><i class="bi bi-bar-chart"></i> Relatórios</a></li>
                         <!-- NOVO LINK DE AUDITORIA -->
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ route('admin.audit.index') }}"><i class="bi bi-clock-history"></i> Auditoria</a></li>

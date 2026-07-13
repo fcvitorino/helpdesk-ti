@@ -23,7 +23,7 @@ class InviteMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Convite para o HelpDesk TI',
+            subject: 'Convite para o VitDesk',
         );
     }
 

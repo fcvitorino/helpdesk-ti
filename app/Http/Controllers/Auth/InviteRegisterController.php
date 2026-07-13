@@ -58,6 +58,6 @@ class InviteRegisterController extends Controller
         auth()->login($user);
 
         return redirect()->route('dashboard')
-            ->with('success', 'Bem-vindo ao HelpDesk TI! Seu cadastro foi concluído com sucesso.');
+            ->with('success', 'Bem-vindo ao VitDesk! Seu cadastro foi concluído com sucesso.');
     }
 }

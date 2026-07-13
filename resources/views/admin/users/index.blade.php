@@ -41,7 +41,7 @@
                     </select>
                 </div>
                 
-                <!-- FILTRO POR STATUS - É AQUI QUE VOCÊ SELECIONA INATIVOS! -->
+                <!-- FILTRO POR STATUS -->
                 <div class="col-md-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
@@ -115,42 +115,45 @@
                         </td>
                         <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
                         <td>
-                            <!-- BOTÃO EDITAR (só aparece se estiver ativo) -->
+                            <!-- BOTÃO EDITAR (só para usuários ativos) -->
                             @if(!$user->trashed())
                                 <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-warning" title="Editar">
-                                    ✏️
+                                    <i class="bi bi-pencil"></i>
                                 </a>
                             @endif
-                            
-                            <!-- BOTÃO REATIVAR (aparece se estiver inativo) -->
-                            @if($user->trashed())
-                                <form action="{{ route('admin.users.activate', $user->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-sm btn-success" title="Reativar" onclick="return confirm('Reativar este usuário?')">
-                                        🔄 Reativar
-                                    </button>
+
+                            <!-- BOTÕES DE AÇÃO (DESATIVAR / REATIVAR / EXCLUIR) -->
+                            @if($user->id !== auth()->id())
+                                @if($user->trashed())
+                                    {{-- Usuário INATIVO: pode REATIVAR ou EXCLUIR --}}
+                                    <form action="{{ route('admin.users.activate', $user->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="btn btn-sm btn-success" title="Reativar" onclick="return confirm('Reativar este usuário?')">
+                                            <i class="bi bi-check-circle"></i> Reativar
+                                        </button>
+                                    </form>
+
+                                 <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display: inline;">
+                                @csrf
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este usuário? Esta ação não pode ser desfeita.')">
+                                <i class="bi bi-trash"></i> Excluir
+                                </button>
                                 </form>
+                                @else
+                                    {{-- Usuário ATIVO: pode DESATIVAR --}}
+                                    <form action="{{ route('admin.users.deactivate', $user->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="btn btn-sm btn-warning" title="Desativar" onclick="return confirm('Desativar este usuário? Ele não poderá mais acessar o sistema até ser reativado.')">
+                                            <i class="bi bi-person-x"></i> Desativar
+                                        </button>
+                                    </form>
+                                @endif
                             @else
-                                <!-- BOTÃO DESATIVAR (aparece se estiver ativo) -->
-                                <form action="{{ route('admin.users.deactivate', $user->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-sm btn-warning" title="Desativar" onclick="return confirm('Desativar este usuário?')">
-                                        ⚠️ Desativar
-                                    </button>
-                                </form>
-                            @endif
-                            
-                            <!-- BOTÃO EXCLUIR PERMANENTEMENTE (só aparece se estiver inativo) -->
-                            @if($user->id !== auth()->id() && $user->trashed())
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir Permanentemente" onclick="return confirm('Excluir permanentemente? Isso NÃO pode ser desfeito!')">
-                                        🗑️ Excluir
-                                    </button>
-                                </form>
+                                {{-- É você (usuário logado) --}}
+                                <span class="badge bg-secondary">Você</span>
                             @endif
                         </td>
                     </tr>

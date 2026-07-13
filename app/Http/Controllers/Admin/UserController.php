@@ -145,22 +145,31 @@ class UserController extends Controller
             ->with('success', "Usuário {$user->name} atualizado com sucesso!");
     }
 
-    public function destroy(User $user)
-    {
-        if (!Auth::user()->isAdmin()) {
-            abort(403);
-        }
-        
-        if ($user->id === Auth::id()) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Você não pode excluir seu próprio usuário.');
-        }
-        
-        $user->forceDelete();
-        
-        return redirect()->route('admin.users.index')
-            ->with('success', "Usuário {$user->name} excluído permanentemente com sucesso!");
+  public function destroy($id)
+{
+    if (!Auth::user()->isAdmin()) {
+        abort(403);
     }
+
+    // Busca o usuário mesmo se estiver inativo (soft delete)
+    $user = User::withTrashed()->find($id);
+
+    if (!$user) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'Usuário não encontrado.');
+    }
+
+    if ($user->id === Auth::id()) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'Você não pode excluir seu próprio usuário.');
+    }
+
+    // Exclui permanentemente (force delete)
+    $user->forceDelete();
+
+    return redirect()->route('admin.users.index')
+        ->with('success', "Usuário {$user->name} excluído permanentemente com sucesso!");
+}
     
     public function activate($id)
     {

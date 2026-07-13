@@ -78,10 +78,14 @@ Route::middleware(['auth', 'check.company'])->group(function () {
         Route::resource('users', UserController::class);
         Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         
         Route::resource('invites', InviteController::class);
         Route::post('invites/{invite}/resend', [InviteController::class, 'resend'])->name('invites.resend');
         Route::patch('invites/{invite}/cancel', [InviteController::class, 'cancel'])->name('invites.cancel');
+        // ========== RELATÓRIOS ==========
+        Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::post('/reports/generate', [App\Http\Controllers\Admin\ReportController::class, 'generate'])->name('reports.generate');
 
         // ========== AUDITORIA ==========
         Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
